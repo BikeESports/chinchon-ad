@@ -5,34 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChinchonAD</title>
 <style>
-  body { font-family: monospace; background: #2e7d32; color: #fff; margin:0; padding:0; }
-  #loginPanel, #gamePanel { display: none; text-align: center; padding:20px; }
-  #hand, #discard, #players { margin: 20px; }
-  .card { display: inline-block; width: 60px; height: 90px; background: #fff; color: #000; border-radius: 8px; line-height: 90px; font-size: 24px; margin: 5px; cursor: pointer; }
-  button { padding: 10px 15px; margin: 5px; font-size: 16px; cursor: pointer; }
-  #players { position: absolute; right:10px; top:10px; text-align:left; }
+  body { margin:0; font-family: monospace; background:#2e7d32; color:#fff; }
+  .panel { display:none; text-align:center; padding:20px; }
+  #hand, #discard, #players { margin:20px; }
+  .card { display:inline-block; width:60px; height:90px; background:#fff; color:#000; border-radius:8px; line-height:90px; font-size:24px; margin:5px; cursor:pointer; transition: transform 0.3s; }
+  .card:hover{ transform:scale(1.1); }
+  button { padding:10px 15px; margin:5px; font-size:16px; cursor:pointer; }
+  #players { position:absolute; right:10px; top:10px; text-align:left; white-space:pre-line; }
+  #lobby input { margin:5px; padding:5px; }
 </style>
 </head>
 <body>
 
-<div id="loginPanel">
+<div id="loginPanel" class="panel" style="display:block;">
   <h1>ChinchonAD - Login / Registro</h1>
-  <div>
-    <input type="text" id="username" placeholder="Usuario">
-    <input type="password" id="password" placeholder="Contraseña">
-    <button id="registerBtn">Registrarse</button>
-    <button id="loginBtn">Iniciar Sesión</button>
-  </div>
+  <input type="text" id="username" placeholder="Usuario">
+  <input type="password" id="password" placeholder="Contraseña">
+  <button id="registerBtn">Registrarse</button>
+  <button id="loginBtn">Iniciar Sesión</button>
   <div id="loginMessage"></div>
 </div>
 
-<div id="modePanel">
+<div id="modePanel" class="panel">
   <h2>Selecciona modo de juego</h2>
   <button id="botModeBtn">Jugar contra Bot</button>
   <button id="friendsModeBtn">Jugar con Amigos</button>
 </div>
 
-<div id="gamePanel">
+<div id="lobby" class="panel">
+  <h2>Lobby - Crear / Unirse a Sala</h2>
+  <div>
+    <input type="text" id="roomName" placeholder="Nombre de Sala">
+    <select id="roomSize">
+      <option value="2">2 Jugadores</option>
+      <option value="4">4 Jugadores</option>
+    </select>
+    <button id="createRoomBtn">Crear Sala</button>
+    <button id="joinRoomBtn">Unirse a Sala</button>
+  </div>
+  <div id="lobbyMessage"></div>
+</div>
+
+<div id="gamePanel" class="panel">
   <h2>ChinchonAD</h2>
   <div>Mazo: <button id="drawDeck">Tomar carta del mazo</button></div>
   <div>Descarte: <span id="discard"></span></div>
@@ -45,33 +59,28 @@
 // ---- VARIABLES ----
 const loginPanel = document.getElementById('loginPanel');
 const modePanel = document.getElementById('modePanel');
+const lobbyPanel = document.getElementById('lobby');
 const gamePanel = document.getElementById('gamePanel');
 
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const loginMessage = document.getElementById('loginMessage');
+const lobbyMessage = document.getElementById('lobbyMessage');
 
 let currentUser = null;
-
-const suits = ['♠','♥','♦','♣'];
-const values = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+let currentRoom = null;
 let deck = [];
 let discardPile = [];
 let hand = [];
 let players = [];
+let turnIndex = 0;
+
+const suits = ['♠','♥','♦','♣'];
+const values = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 
 // ---- LOGIN / REGISTRO ----
-loginPanel.style.display = 'block';
-modePanel.style.display = 'none';
-gamePanel.style.display = 'none';
-
-function getUsers(){
-  return JSON.parse(localStorage.getItem('chinchon_users')||'{}');
-}
-
-function saveUsers(users){
-  localStorage.setItem('chinchon_users', JSON.stringify(users));
-}
+function getUsers(){ return JSON.parse(localStorage.getItem('chinchon_users')||'{}'); }
+function saveUsers(users){ localStorage.setItem('chinchon_users', JSON.stringify(users)); }
 
 document.getElementById('registerBtn').onclick = ()=>{
   const username = usernameInput.value.trim();
@@ -97,108 +106,94 @@ document.getElementById('loginBtn').onclick = ()=>{
   }
 }
 
-// ---- MODO DE JUEGO ----
 document.getElementById('botModeBtn').onclick = ()=>{
   modePanel.style.display='none';
   startGame('bot');
 }
+
 document.getElementById('friendsModeBtn').onclick = ()=>{
   modePanel.style.display='none';
-  startGame('friends');
+  lobbyPanel.style.display='block';
 }
 
-document.getElementById('logoutBtn').onclick = ()=>{
-  location.reload();
+document.getElementById('logoutBtn').onclick = ()=>{ location.reload(); }
+
+// ---- LOBBY ----
+document.getElementById('createRoomBtn').onclick = ()=>{
+  const name = document.getElementById('roomName').value.trim();
+  const size = parseInt(document.getElementById('roomSize').value);
+  if(!name){ lobbyMessage.innerText='Ingresa un nombre de sala'; return;}
+  currentRoom = {name:name,size:size,players:[{name:currentUser,points:0}]};
+  lobbyMessage.innerText=`Sala creada: ${name} - Esperando jugadores...`;
+  setTimeout(()=>{ startGame('friends'); },1000); // simula que todos se unen
 }
 
-// ---- FUNCIONES DEL JUEGO ----
+document.getElementById('joinRoomBtn').onclick = ()=>{
+  const name = document.getElementById('roomName').value.trim();
+  if(!name){ lobbyMessage.innerText='Ingresa un nombre de sala'; return;}
+  currentRoom = {name:name,size:2,players:[{name:currentUser,points:0},{name:'AmigoSimulado',points:0}]};
+  lobbyMessage.innerText=`Unido a sala: ${name}`;
+  setTimeout(()=>{ startGame('friends'); },1000); // simula inicio
+}
+
+// ---- JUEGO ----
 function createDeck(){
-  deck = [];
-  for(let s of suits){
-    for(let v of values){
-      deck.push({suit:s,value:v});
-    }
-  }
+  deck=[];
+  for(let s of suits){ for(let v of values){ deck.push({suit:s,value:v}); }}
   shuffle(deck);
 }
-
-function shuffle(array){
-  for(let i=array.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [array[i],array[j]]=[array[j],array[i]];
-  }
-}
+function shuffle(array){ for(let i=array.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [array[i],array[j]]=[array[j],array[i]]; }}
 
 function drawCard(fromDeck=true){
+  if(turnIndex !==0) return;
   let card;
-  if(fromDeck){
-    if(deck.length===0) return;
-    card = deck.pop();
-  } else {
-    if(discardPile.length===0) return;
-    card = discardPile.pop();
-  }
+  if(fromDeck){ if(deck.length===0) return; card=deck.pop(); } else { if(discardPile.length===0) return; card=discardPile.pop(); }
   hand.push(card);
-  renderHand();
-  renderDiscard();
+  renderHand(); renderDiscard();
 }
 
 function discardCard(index){
+  if(turnIndex !==0) return;
   const card = hand.splice(index,1)[0];
   discardPile.push(card);
-  renderHand();
-  renderDiscard();
   updateScore(currentUser,-10);
+  renderHand(); renderDiscard(); renderPlayers();
+  nextTurn();
 }
 
 function renderHand(){
-  const handDiv = document.getElementById('hand');
-  handDiv.innerHTML='';
-  hand.forEach((c,i)=>{
-    const cardDiv=document.createElement('div');
-    cardDiv.className='card';
-    cardDiv.innerText=c.value+c.suit;
-    cardDiv.onclick=()=>discardCard(i);
-    handDiv.appendChild(cardDiv);
-  });
+  const handDiv = document.getElementById('hand'); handDiv.innerHTML='';
+  hand.forEach((c,i)=>{ const cardDiv=document.createElement('div'); cardDiv.className='card'; cardDiv.innerText=c.value+c.suit; cardDiv.onclick=()=>discardCard(i); handDiv.appendChild(cardDiv);});
 }
 
 function renderDiscard(){
   const discardSpan=document.getElementById('discard');
-  if(discardPile.length>0){
-    const top=discardPile[discardPile.length-1];
-    discardSpan.innerText=top.value+top.suit;
-  } else {
-    discardSpan.innerText='(vacío)';
-  }
+  if(discardPile.length>0){ const top=discardPile[discardPile.length-1]; discardSpan.innerText=top.value+top.suit; }
+  else{ discardSpan.innerText='(vacío)'; }
 }
 
 function updateScore(playerName,value){
-  const p = players.find(pl=>pl.name===playerName);
-  if(p){
-    p.points += value;
-  } else {
-    players.push({name:playerName,points:value});
-  }
+  let p = players.find(pl=>pl.name===playerName);
+  if(p){ p.points+=value; } else{ players.push({name:playerName,points:value}); }
   players.sort((a,b)=>a.points-b.points);
   renderPlayers();
 }
 
 function renderPlayers(){
-  const playersDiv=document.getElementById('players');
-  playersDiv.innerHTML='';
-  players.forEach(pl=>{
-    playersDiv.innerText+=`${pl.name}: ${pl.points} puntos\n`;
-  });
+  const div=document.getElementById('players'); div.innerHTML='';
+  players.forEach(pl=>{ div.innerText+=`${pl.name}: ${pl.points} puntos\n`; });
+}
+
+function nextTurn(){
+  turnIndex = (turnIndex+1)%players.length;
 }
 
 function startGame(mode){
-  gamePanel.style.display='block';
-  createDeck();
-  hand=[];
-  discardPile=[];
+  lobbyPanel.style.display='none'; gamePanel.style.display='block';
+  createDeck(); hand=[]; discardPile=[];
   for(let i=0;i<7;i++) drawCard(true);
-  updateScore(currentUser,0);
+  players=currentRoom?currentRoom.players:[{name:currentUser,points:0}];
+  renderPlayers(); turnIndex=0;
 }
 </script>
 </body>
