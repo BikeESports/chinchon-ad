@@ -3,376 +3,300 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ChinchonAD</title>
+<title>Chinchón Online — AD</title>
 <style>
   :root{
-    --green:#2f7a34;
-    --card-w:110px;
-    --card-h:160px;
-    --card-radius:10px;
-    --shadow: 0 4px 8px rgba(0,0,0,0.25);
-    --back-bg1:#b02e2e;
-    --back-bg2:#8f1f1f;
+    --green:#2f7a34; --felt:#1e6b24; --card:#ffffff; --ink:#111;
+    --accent:#0b66ff; --mut:#dfe7dd; --danger:#e11d48; --good:#22c55e;
+    --card-w:92px; --card-h:140px; --r:12px;
   }
-  body{
-    margin:0;
-    font-family: "Segoe UI", Roboto, Arial, sans-serif;
-    background: var(--green);
-    color:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    min-height:100vh;
-  }
-  .table {
-    width:900px;
-    text-align:center;
-  }
-  h1{ color:#fff; margin-bottom:18px; font-size:26px; }
-  .controls{
-    display:flex;
-    gap:24px;
-    align-items:center;
-    justify-content:center;
-    margin-bottom:18px;
-  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:var(--green);color:#fff}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;background:#155c1a;border-bottom:1px solid #0f4513;position:sticky;top:0;z-index:5}
+  h1{font-size:18px;margin:0}
+  .wrap{max-width:1100px;margin:0 auto;padding:14px}
+  .topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .pill{background:#0f4513;border:1px solid #0a3510;padding:6px 10px;border-radius:10px;font-size:12px;color:var(--mut)}
+  .btn{background:#0f172a;border:1px solid #1b2a4d;color:#e9eefc;padding:10px 12px;border-radius:10px;cursor:pointer}
+  .btn.primary{background:var(--accent);border-color:#0b5be6;color:#fff}
+  .btn.good{background:var(--good);border-color:#16a34a;color:#05290d}
+  .btn.warn{background:#3b1d1d;border-color:#6b2626;color:#ffb3b3}
+  input,select{background:#0b1222;border:1px solid #1b2a4d;color:#eaf2ff;padding:8px 10px;border-radius:10px}
 
-  .deck-area{
-    display:flex;
-    gap:16px;
-    align-items:center;
-    justify-content:center;
-  }
+  .table{background:radial-gradient(ellipse at center,var(--felt),#155c1a);border:1px solid #0f4513;border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.25);padding:16px;margin-top:12px}
+  .zones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stack{display:flex;gap:20px;align-items:center;justify-content:center}
+  .card{width:var(--card-w);height:var(--card-h);border-radius:var(--r);background:var(--card);color:var(--ink);box-shadow:0 8px 14px rgba(0,0,0,.25);position:relative;user-select:none}
+  .card.small{transform:scale(.85)}
+  .cardSlot{width:var(--card-w);height:var(--card-h);border-radius:var(--r);border:2px dashed rgba(255,255,255,.35);display:grid;place-items:center;color:#cfe4d2}
+  .hand{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+  .meta{font-size:13px;color:#d6f0d7;opacity:.95}
+  .center{text-align:center}
+  .turn{font-weight:700}
+  footer{opacity:.8;font-size:12px;text-align:center;padding:14px}
 
-  .card {
-    width:var(--card-w);
-    height:var(--card-h);
-    border-radius:var(--card-radius);
-    box-shadow:var(--shadow);
-    display:inline-block;
-    user-select:none;
-    cursor:default;
-    position:relative;
-    background:#fff;
-  }
-  .card.back {
-    width:calc(var(--card-w) * 0.9);
-    height:calc(var(--card-h) * 0.9);
-    cursor:pointer;
-  }
-  .card img, .card svg { width:100%; height:100%; border-radius:inherit; display:block; }
-  .deck-stack {
-    position:relative;
-    width:140px;
-    height:140px;
-  }
-  .deck-stack .card {
-    position:absolute;
-    left:0; top:0;
-    transform-origin:center;
-    transition: transform 220ms ease, opacity 220ms ease;
-  }
-  .hand {
-    margin-top:26px;
-    display:flex;
-    gap:14px;
-    justify-content:center;
-    align-items:flex-end;
-    flex-wrap:wrap;
-  }
+  /* auth modal */
+  .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:20}
+  .modal.show{display:flex}
+  .sheet{width:min(520px,92vw);background:#0e1220;border:1px solid #1b2a4d;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);padding:16px}
+  .row{display:flex;gap:10px;align-items:center}
+  .err{color:#ffb4c4;font-size:12px;margin-top:6px;min-height:16px}
 
-  .btn {
-    background:#eee;
-    color:#222;
-    border-radius:6px;
-    padding:10px 20px;
-    display:inline-block;
-    cursor:pointer;
-    border:0;
-    font-weight:600;
-  }
-  .meta {
-    font-size:14px; color:#f0f0f0; opacity:0.95;
-  }
-  /* small responsive */
-  @media (max-width:640px){
-    .table{ width:92%; }
-    :root{ --card-w:80px; --card-h:120px; }
+  /* mobile */
+  @media (max-width:720px){
+    :root{--card-w:76px;--card-h:116px}
+    .zones{grid-template-columns:1fr}
   }
 </style>
 </head>
 <body>
-  <div class="table" role="application" aria-label="Mesa de Chinchon">
-    <h1>ChinchonAD</h1>
+<header>
+  <h1>Chinchón Online — MVP</h1>
+  <div class="topbar">
+    <span class="pill">Sala: <span id="roomCode">—</span></span>
+    <span class="pill">Jugador: <span id="playerName">—</span></span>
+    <button class="btn" id="btnNewRoom">Crear sala</button>
+    <input id="joinInput" placeholder="Código sala" style="width:120px"/>
+    <button class="btn" id="btnJoin">Unirse</button>
+    <button class="btn warn" id="btnLeave" style="display:none">Salir</button>
+    <button class="btn" id="btnAuth">Ingresar / Registrarse</button>
+  </div>
+</header>
 
-    <div class="controls">
-      <div class="meta">Mazo:</div>
-      <div id="deckArea" class="deck-area" aria-live="polite">
-        <!-- Mazo (dorso) -->
-        <div id="deckStack" class="deck-stack" title="Click para tomar carta del mazo" role="button" tabindex="0" aria-pressed="false" aria-label="Tomar carta del mazo">
-          <!-- cartas apiladas se generan por JS -->
-        </div>
+<!-- MODAL AUTH -->
+<div id="authModal" class="modal">
+  <div class="sheet">
+    <h2 style="margin:0 0 8px">Ingresar o crear cuenta</h2>
+    <div class="meta">No hay admin. Registro público con <b>usuario único</b> y contraseña.</div>
 
-        <!-- Carta superior del descarte -->
-        <div style="display:flex;flex-direction:column;align-items:center;">
-          <div class="meta" style="margin-bottom:6px;color:#eaeaea">Descarte</div>
-          <div id="discardTop" class="card" aria-label="Carta superior del descarte">
-            <!-- contenido generado -->
+    <div style="display:grid;gap:10px;margin-top:12px">
+      <label>Usuario (único)
+        <input id="authUser" placeholder="tu_usuario" autocomplete="username" />
+      </label>
+      <label>Contraseña
+        <input id="authPass" type="password" placeholder="•••••••" autocomplete="current-password" />
+      </label>
+      <details>
+        <summary class="meta">Email (opcional, para recuperar contraseña)</summary>
+        <input id="authEmail" type="email" placeholder="tu@email.com (opcional)" autocomplete="email" />
+      </details>
+      <div class="row" style="margin-top:6px">
+        <button class="btn primary" id="authLogin">Iniciar sesión</button>
+        <button class="btn good" id="authRegister">Crear cuenta</button>
+        <button class="btn" id="authClose" style="margin-left:auto">Cerrar</button>
+      </div>
+      <div id="authErr" class="err"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="table">
+    <div class="center meta">Turno: <span id="turnInfo" class="turn">—</span> • Estado: <span id="statusInfo">esperando…</span></div>
+
+    <div class="zones" style="margin-top:10px">
+      <div class="center">
+        <div class="meta">Mazo</div>
+        <div class="stack">
+          <div id="deckEl" class="card" role="button" title="Tomar del mazo"></div>
+          <div>
+            <div class="meta" style="margin-bottom:6px">Descarte</div>
+            <div id="discardEl" class="card"></div>
           </div>
         </div>
+        <div style="margin-top:10px">
+          <button class="btn" id="btnTakeDeck">Tomar del mazo</button>
+          <button class="btn" id="btnTakeDiscard">Tomar del descarte</button>
+          <button class="btn good" id="btnClose">Cerrar</button>
+        </div>
+      </div>
+      <div class="center">
+        <div class="meta">Acción</div>
+        <div id="actionInfo" class="pill" style="margin:6px auto;display:inline-block">—</div>
+        <div class="meta" style="margin-top:8px">Descartá tocando una carta de tu mano</div>
       </div>
     </div>
 
-    <div style="margin-top:10px;">
-      <button id="resetBtn" class="btn">Rebarajar y reiniciar</button>
+    <div class="center" style="margin-top:14px">
+      <div class="meta">Tu mano (7 cartas)</div>
+      <div id="handEl" class="hand"></div>
     </div>
 
-    <div class="hand" id="handArea" style="margin-top:18px;">
-      <!-- mano del jugador -->
+    <div class="center" style="margin-top:10px">
+      <div class="meta">Oponente: <span id="oppCount">0</span> cartas</div>
     </div>
+
   </div>
 
+  <div class="center" style="margin-top:10px">
+    <div class="pill">Puntaje de tu mano ahora: <span id="scoreNow">—</span></div>
+  </div>
+
+</div>
+
+<footer>© <span id="year"></span> MVP educativo — sin apuestas. Reglas simplificadas de Chinchón.</footer>
+
 <script>
-/*
-  Mazo español 40 cartas:
-  - Palos: bastos, oros, copas, espadas
-  - Valores: 1-7, 10-12 (10=Sota, 11=Caballo, 12=Rey)
-  - Presentación: generamos SVGs en línea para cada carta (cara) y una espalda (back).
-*/
+/* =========================================================
+   Chinchón Online (MVP) — con Registro/Login + Realtime
+   - Registro público (usuario único) y login con validación.
+   - Sin admin. Sin dinero real.
+   - Supabase Auth + tabla perfiles(username único) + Realtime Broadcast.
+========================================================= */
 
-const SUITS = [
-  { id:'bastos', label:'Bastos', short:'B', color:'black', symbol:'⚒' }, // stylized club/baton
-  { id:'oros',   label:'Oros',   short:'O', color:'darkgoldenrod', symbol:'◊' }, // diamond-like
-  { id:'copas',  label:'Copas',  short:'C', color:'red', symbol:'♢' }, // cup-ish: using diamond hollow
-  { id:'espadas',label:'Espadas',short:'E', color:'black', symbol:'♠' } // spade
-];
+// ====== CONFIG SUPABASE ======
+// 1) Crea proyecto en https://supabase.com/ (free)
+// 2) Project Settings → API → URL y anon key
+// 3) Pega aquí tus claves. Si quedan vacías, funciona offline (sin login ni online)
+const SUPABASE_URL = ""; // ej: https://abcxyz.supabase.co
+const SUPABASE_ANON_KEY = ""; // ej: eyJhbGciOi...
 
-// valores representados como en chinchón: A,2..7,S,C,R
-const VALUE_ORDER = [1,2,3,4,5,6,7,10,11,12];
-const VALUE_LABEL = v => {
-  if(v===1) return 'A';
-  if(v===10) return 'S'; // Sota
-  if(v===11) return 'C'; // Caballo
-  if(v===12) return 'R'; // Rey
-  return String(v);
+// SQL a ejecutar una sola vez en el editor SQL de Supabase:
+// create table if not exists profiles (
+//   id uuid primary key references auth.users(id) on delete cascade,
+//   username text unique not null,
+//   created_at timestamp with time zone default now()
+// );
+
+const $ = id=>document.getElementById(id);
+$('year').textContent = new Date().getFullYear();
+
+// ====== Baralla ======
+const SUITS = [ 'bastos','oros','copas','espadas' ];
+const VALUES = [1,2,3,4,5,6,7,10,11,12];
+const LABEL = v => v===1? 'A' : v===10? 'S' : v===11? 'C' : v===12? 'R' : String(v);
+const SUIT_SYM = { bastos:'⛏', oros:'◆', copas:'♢', espadas:'♠' };
+const RED = new Set(['oros','copas']);
+function buildDeck(){ const d=[]; for(const s of SUITS){ for(const v of VALUES){ d.push({s,v}); } } return d; }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function cardSVG(c){ const w=300,h=430,rx=26,color=RED.has(c.s)? 'crimson':'#111'; const svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'> <defs><linearGradient id='g' x1='0' x2='0' y1='0' y2='1'><stop offset='0' stop-color='#fff'/><stop offset='1' stop-color='#f2f2f2'/></linearGradient></defs> <rect x='6' y='6' rx='${rx}' ry='${rx}' width='${w-12}' height='${h-12}' fill='url(#g)' stroke='#ddd' stroke-width='2'/> <text x='26' y='68' font-size='54' font-family='Arial' font-weight='700' fill='${color}'>${LABEL(c.v)}</text> <text x='26' y='106' font-size='34' font-family='Arial' fill='${color}'>${SUIT_SYM[c.s]}</text> <g transform='translate(${w/2},${h/2})'><text x='0' y='10' text-anchor='middle' font-size='120' font-family='Georgia' fill='${color}' opacity='.95'>${SUIT_SYM[c.s]}</text></g> <g transform='translate(${w-26},${h-58}) rotate(180)'><text x='0' y='0' font-size='46' font-family='Arial' fill='${color}' font-weight='700' text-anchor='end'>${LABEL(c.v)}</text></g> <text x='${w/2}' y='${h-20}' font-size='14' text-anchor='middle' fill='#666'>${c.s}</text> </svg>`; return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg); }
+function backSVG(){ const w=360,h=500,rx=30; const svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'> <defs><linearGradient id='bg' x1='0' x2='0' y1='0' y2='1'><stop offset='0' stop-color='#c83737'/><stop offset='1' stop-color='#8b2323'/></linearGradient></defs> <rect x='10' y='10' rx='${rx}' width='${w-20}' height='${h-20}' fill='url(#bg)' stroke='#530707' stroke-width='6'/> <g transform='translate(${w/2},${h/2})'><text x='0' y='10' text-anchor='middle' font-size='86' font-family='Georgia' fill='#fff'>CHINCHÓN</text></g> </svg>`; return 'data:image/svg+xml;utf8,'+encodeURIComponent(svg); }
+
+// ====== Reglas y puntaje ======
+function scoreHand(cards){
+  function valPoints(v){ return v===1?1 : (v>=10?10:v); }
+  function findRuns(cs){ const runs=[]; for(const s of SUITS){ const ofSuit = cs.filter(c=>c.s===s).map(c=>c.v).sort((a,b)=>a-b); if(ofSuit.length<3) continue; let cur=[ofSuit[0]]; for(let i=1;i<ofSuit.length;i++){ if(ofSuit[i]===ofSuit[i-1]+1){ cur.push(ofSuit[i]); } else { if(cur.length>=3) runs.push({s,vals:cur.slice()}); cur=[ofSuit[i]]; } } if(cur.length>=3) runs.push({s,vals:cur.slice()}); } return runs; }
+  function findSets(cs){ const sets=[]; for(const v of VALUES){ const ofV = cs.filter(c=>c.v===v); if(ofV.length>=3){ sets.push({v, count:ofV.length}); } } return sets; }
+  function removeGroup(cs, g){ const out=cs.slice(); if(g.type==='run'){ for(let i=out.length-1;i>=0;i--){ if(out[i].s===g.s && g.vals.includes(out[i].v)){ out.splice(i,1); } } } else { let need=g.count; for(let i=out.length-1;i>=0 && need>0;i--){ if(out[i].v===g.v){ out.splice(i,1); need--; } } } return out; }
+  function brute(cs){ const rs7 = findRuns(cs).find(r=>r.vals.length===7); if(cs.length===7 && rs7) return 0; const groups = findRuns(cs).map(r=>({type:'run',...r})).concat(findSets(cs).map(s=>({type:'set',...s}))); if(groups.length===0) return cs.reduce((t,c)=>t+valPoints(c.v),0); let best=Infinity; for(const g of groups){ best=Math.min(best, brute(removeGroup(cs,g))); } return best; }
+  return brute(cards.slice());
+}
+
+// ====== Estado ======
+let sb=null, chan=null, user=null, profile=null;
+let state = {
+  meId: null, // user id (uuid) o local id
+  meName: null, // username
+  room: null,
+  isHost: false,
+  deck: [], discard: [], hands: {}, turn: null, phase:'idle'
 };
 
-// crea la lista de cartas del mazo
-function createDeck(){
-  const deck = [];
-  for(const s of SUITS){
-    for(const v of VALUE_ORDER){
-      deck.push({ suit:s.id, suitMeta:s, value:v, label:VALUE_LABEL(v), id: `${s.id}_${v}` });
-    }
-  }
-  return deck;
+function supaReady(){ return !!(SUPABASE_URL && SUPABASE_ANON_KEY); }
+async function connect(){ if(!supaReady()) return; if(sb) return; const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2'); sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+
+function uiSync(){
+  $('roomCode').textContent = state.room || '—';
+  $('playerName').textContent = state.meName || '—';
+  $('turnInfo').textContent = state.turn ? (state.turn===state.meId? 'TU TURNO' : state.turn) : '—';
+  $('statusInfo').textContent = state.phase;
+
+  if(state.deck.length>0) renderBack($('deckEl')); else $('deckEl').innerHTML = `<div class='cardSlot'>Mazo vacío</div>`;
+  renderCard($('discardEl'), state.discard[state.discard.length-1]);
+
+  const h = state.hands[state.meId]||[]; const handEl=$('handEl'); handEl.innerHTML='';
+  h.forEach((c,idx)=>{ const d=document.createElement('div'); d.className='card'; d.innerHTML=`<img src='${cardSVG(c)}' alt='${LABEL(c.v)} ${c.s}' style='width:100%;height:100%;border-radius:12px'/>`; d.addEventListener('click', ()=> onDiscard(idx)); handEl.appendChild(d); });
+  const oppId = Object.keys(state.hands).find(k=>k!==state.meId); $('oppCount').textContent = oppId? (state.hands[oppId]?.length||0) : 0;
+  $('scoreNow').textContent = (h.length? scoreHand(h): '—');
+  const myTurn = state.turn===state.meId; $('btnTakeDeck').disabled = !(myTurn && state.phase==='draw'); $('btnTakeDiscard').disabled = !(myTurn && state.phase==='draw' && state.discard.length>0); $('btnClose').disabled = !(myTurn && state.phase==='discard');
+  $('actionInfo').textContent = myTurn ? (state.phase==='draw' ? 'Tomá del mazo o descarte' : 'Descartá una carta o Cerrar') : 'Esperando al otro jugador…';
 }
 
-// Fisher-Yates shuffle
-function shuffle(array){
-  for(let i=array.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [array[i],array[j]]=[array[j],array[i]];
+// ====== Render helpers ======
+function renderCard(el, c){ el.innerHTML = c? `<img alt="${LABEL(c.v)} de ${c.s}" src="${cardSVG(c)}" style="width:100%;height:100%;border-radius:12px;display:block"/>` : `<div class='cardSlot'>vacío</div>`; }
+function renderBack(el){ el.innerHTML = `<img alt='Mazo' src='${backSVG()}' style='width:100%;height:100%;border-radius:12px;display:block'/>`; }
+
+// ====== Juego local ======
+function newGame(){ state.deck = shuffle(buildDeck()); state.discard=[]; state.hands={}; state.hands[state.meId]=[]; for(let i=0;i<7;i++){ state.hands[state.meId].push(state.deck.pop()); } state.turn=state.meId; state.phase='draw'; uiSync(); broadcast(true); }
+function onTakeDeck(){ if(!(state.turn===state.meId && state.phase==='draw')) return; if(state.deck.length===0) return; const c=state.deck.pop(); state.hands[state.meId].push(c); state.phase='discard'; broadcast(); uiSync(); }
+function onTakeDiscard(){ if(!(state.turn===state.meId && state.phase==='draw')) return; if(state.discard.length===0) return; const c=state.discard.pop(); state.hands[state.meId].push(c); state.phase='discard'; broadcast(); uiSync(); }
+function onDiscard(idx){ if(!(state.turn===state.meId && state.phase==='discard')) return; const c = state.hands[state.meId].splice(idx,1)[0]; state.discard.push(c); const opp = Object.keys(state.hands).find(k=>k!==state.meId); state.turn = opp || state.meId; state.phase='draw'; broadcast(); uiSync(); }
+function onClose(){ if(!(state.turn===state.meId && state.phase==='discard')) return; state.phase='closed'; const myScore=scoreHand(state.hands[state.meId]); let msg=`Cierre: ${state.meName||'Vos'} ${myScore} pts`; const opp = Object.keys(state.hands).find(k=>k!==state.meId); if(opp){ const s2=scoreHand(state.hands[opp]); msg += ` • Rival ${s2} → ${myScore<s2?'Ganás': myScore>s2?'Perdés':'Empate'}`; } alert(msg); broadcast(); uiSync(); }
+
+$('btnTakeDeck').addEventListener('click', onTakeDeck);
+$('btnTakeDiscard').addEventListener('click', onTakeDiscard);
+$('btnClose').addEventListener('click', onClose);
+$('deckEl').addEventListener('click', onTakeDeck);
+
+// ====== Realtime ======
+function roomChannel(code){ return `room_${code}`; }
+function mergeState(incoming){ if(!incoming) return; if(incoming.__host && !state.isHost){ state = { ...state, ...incoming }; } state.hands[state.meId] = state.hands[state.meId] || []; }
+function broadcast(asHost=false){ if(!chan) return; const payload = { ...state, __host:true }; chan.send({ type:'broadcast', event:'state', payload }); }
+async function createRoom(){ if(!state.meId){ return openAuth(); } state.isHost=true; state.room = Math.random().toString(36).slice(2,6).toUpperCase(); newGame(); $('btnLeave').style.display='inline-block'; if(!supaReady()) { uiSync(); return; } await connect(); chan = sb.channel(roomChannel(state.room), { config:{ broadcast:{ ack:true } } }); chan.on('broadcast', {event:'state'}, p=>{ mergeState(p.payload); uiSync(); }); await chan.subscribe(); broadcast(true); }
+async function joinRoom(code){ if(!state.meId){ return openAuth(); } state.isHost=false; state.room=code; $('btnLeave').style.display='inline-block'; if(!supaReady()){ alert('Sin Supabase configurado: no habrá sync online.'); uiSync(); return; } await connect(); chan = sb.channel(roomChannel(state.room), { config:{ broadcast:{ ack:true } } }); chan.on('broadcast', {event:'state'}, p=>{ mergeState(p.payload); uiSync(); }); await chan.subscribe(); }
+function leaveRoom(){ if(chan){ chan.unsubscribe(); chan=null; } state.room=null; state.isHost=false; $('btnLeave').style.display='none'; uiSync(); }
+
+$('btnNewRoom').addEventListener('click', createRoom);
+$('btnJoin').addEventListener('click', ()=>{ const code=$('joinInput').value.trim().toUpperCase(); if(code) joinRoom(code); });
+$('btnLeave').addEventListener('click', leaveRoom);
+
+// ====== AUTH (usuario único + contraseña, sin admin) ======
+const modal=$('authModal'); const err=$('authErr');
+function openAuth(){ modal.classList.add('show'); err.textContent=''; }
+function closeAuth(){ modal.classList.remove('show'); }
+$('btnAuth').addEventListener('click', openAuth); $('authClose').addEventListener('click', closeAuth);
+
+function synthEmailFromUsername(u){ return `${u}@game.local`; }
+
+async function register(){
+  const u=$('authUser').value.trim(); const p=$('authPass').value; const email=($('authEmail').value.trim()||synthEmailFromUsername(u));
+  if(!u||!p){ err.textContent='Completá usuario y contraseña.'; return; }
+  if(!supaReady()){ // modo offline
+    localStorage.setItem(`user:${u}`, JSON.stringify({u,p})); localStorage.setItem('session', u); applySessionOffline(u); closeAuth(); return;
   }
-  return array;
+  await connect();
+  // 1) validar que username no exista
+  const { data:exist } = await sb.from('profiles').select('username').eq('username', u).maybeSingle();
+  if(exist){ err.textContent='Ese nombre de usuario ya está en uso.'; return; }
+  // 2) crear auth user
+  const { data:sign, error:e1 } = await sb.auth.signUp({ email, password:p });
+  if(e1){ err.textContent = 'Error al registrar: '+e1.message; return; }
+  user = sign.user;
+  // 3) guardar perfil
+  const { error:e2 } = await sb.from('profiles').upsert({ id:user.id, username:u });
+  if(e2){ err.textContent='Error guardando perfil: '+e2.message; return; }
+  profile = { id:user.id, username:u };
+  persistSession();
+  closeAuth();
+  applySession();
 }
 
-// generar SVG data URL para la cara de carta
-function cardFaceSVG(card){
-  // decide color: oros & copas -> red/gold; bastos & espadas -> black
-  const suitMeta = SUITS.find(s=>s.id===card.suit);
-  const color = (card.suit==='oros' || card.suit==='copas') ? 'crimson' : 'black';
-  const suitSym = suitMeta.symbol;
-  const label = card.label;
-
-  const w = 300, h=430;
-  const rx = 30;
-  const svg = `
-  <svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>
-    <defs>
-      <filter id="f" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="6" stdDeviation="6" flood-opacity="0.15"/>
-      </filter>
-      <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0" stop-color="#fff"/>
-        <stop offset="1" stop-color="#f3f3f3"/>
-      </linearGradient>
-    </defs>
-    <rect x="6" y="6" rx="${rx}" ry="${rx}" width="${w-12}" height="${h-12}" fill="url(#g)" stroke="#ddd" stroke-width="2" />
-    <!-- Rank top-left -->
-    <text x="30" y="72" font-size="56" font-family="Arial" fill="${color}" font-weight="700">${label}</text>
-    <!-- Suit under rank -->
-    <text x="30" y="110" font-size="36" font-family="Arial" fill="${color}">${suitSym}</text>
-
-    <!-- Big suit center -->
-    <g transform="translate(${w/2},${h/2})">
-      <text x="0" y="10" text-anchor="middle" font-size="120" font-family="Georgia, serif" fill="${color}" opacity="0.95">${suitSym}</text>
-    </g>
-
-    <!-- small rank bottom-right rotated -->
-    <g transform="translate(${w-30},${h-60}) rotate(180)">
-      <text x="0" y="0" font-size="46" font-family="Arial" fill="${color}" font-weight="700" text-anchor="end">${label}</text>
-    </g>
-
-    <!-- footer small suit name -->
-    <text x="${w/2}" y="${h-22}" font-size="14" text-anchor="middle" fill="#666">${suitMeta.label}</text>
-  </svg>
-  `;
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+async function login(){
+  const u=$('authUser').value.trim(); const p=$('authPass').value; if(!u||!p){ err.textContent='Completá usuario y contraseña.'; return; }
+  if(!supaReady()){ // modo offline
+    const raw = localStorage.getItem(`user:${u}`); if(!raw){ err.textContent='Usuario inexistente.'; return; } const obj=JSON.parse(raw); if(obj.p!==p){ err.textContent='Contraseña incorrecta.'; return; } localStorage.setItem('session', u); applySessionOffline(u); closeAuth(); return;
+  }
+  await connect();
+  // buscar email por username
+  const { data:prof, error:e0 } = await sb.from('profiles').select('id,username').eq('username', u).maybeSingle();
+  if(e0 || !prof){ err.textContent='Usuario inexistente.'; return; }
+  // usamos correo sintético
+  const email = synthEmailFromUsername(u);
+  const { data:sess, error:e1 } = await sb.auth.signInWithPassword({ email, password:p });
+  if(e1){ err.textContent='Contraseña incorrecta.'; return; }
+  user = sess.user; profile = prof; persistSession(); closeAuth(); applySession();
 }
 
-// generar SVG data URL para dorso del mazo
-function cardBackSVG(){
-  const w=360,h=500, rx=34;
-  const svg = `
-  <svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>
-    <defs>
-      <pattern id="p" width="20" height="20" patternUnits="userSpaceOnUse">
-        <rect width="20" height="20" fill="#bb2a2a"/>
-        <circle cx="10" cy="10" r="5" fill="#d67" opacity="0.15"/>
-      </pattern>
-      <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0" stop-color="#c83737"/>
-        <stop offset="1" stop-color="#8b2323"/>
-      </linearGradient>
-    </defs>
-    <rect x="8" y="8" rx="${rx}" width="${w-16}" height="${h-16}" fill="url(#bg)" stroke="#530707" stroke-width="6"/>
-    <rect x="26" y="26" rx="${rx-8}" width="${w-52}" height="${h-52}" fill="url(#p)" opacity="0.9"/>
-    <g transform="translate(${w/2},${h/2})">
-      <text x="0" y="-10" font-size="80" font-family="Georgia" fill="#fff" text-anchor="middle" opacity="0.95">CHINCHÓN</text>
-      <text x="0" y="60" font-size="22" font-family="Arial" fill="#fff" text-anchor="middle" opacity="0.85">MAZO ESPAÑOL 40</text>
-    </g>
-  </svg>
-  `;
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-}
+function persistSession(){ localStorage.setItem('meId', user.id); localStorage.setItem('meName', profile.username); }
+function loadSession(){ const id=localStorage.getItem('meId'); const nm=localStorage.getItem('meName'); if(id&&nm){ state.meId=id; state.meName=nm; } else { state.meId = state.meId || Math.random().toString(36).slice(2,10); state.meName = state.meName || 'Inv-'+state.meId.slice(0,4); } }
+function applySession(){ loadSession(); uiSync(); }
+function applySessionOffline(u){ state.meId = 'local-'+u; state.meName = u; uiSync(); }
 
-// creación y render
-let deck = [];
-let discard = [];
-let hand = [];
+$('authRegister').addEventListener('click', register);
+$('authLogin').addEventListener('click', login);
 
-const deckStackEl = document.getElementById('deckStack');
-const discardTopEl = document.getElementById('discardTop');
-const handAreaEl = document.getElementById('handArea');
-const resetBtn = document.getElementById('resetBtn');
-
-function renderDeckStack(){
-  deckStackEl.innerHTML = '';
-  const backUrl = cardBackSVG();
-  // show up to 6 cards visually offset
-  const n = Math.min(deck.length, 6);
-  for(let i=0;i<n;i++){
-    const cardEl = document.createElement('div');
-    cardEl.className='card back';
-    // small offset for stacked look
-    cardEl.style.transform = `translate(${i*2}px,${-i*2}px) rotate(${(n-i-1)*2 - 4}deg)`;
-    cardEl.style.zIndex = String(100 + i);
-    cardEl.style.opacity = (i===n-1)?1:0.94;
-    cardEl.innerHTML = `<img src="${backUrl}" alt="Dorso del mazo">`;
-    deckStackEl.appendChild(cardEl);
-  }
-  // if empty, show a faint empty slot
-  if(deck.length===0){
-    const empty = document.createElement('div');
-    empty.className='card back';
-    empty.style.display='flex'; empty.style.alignItems='center'; empty.style.justifyContent='center';
-    empty.innerHTML = `<div style="color:#fff; font-weight:700; opacity:0.7">VACÍO</div>`;
-    deckStackEl.appendChild(empty);
-  }
-}
-
-// muestra la carta superior del descarte (o vacío)
-function renderDiscardTop(){
-  discardTopEl.innerHTML = '';
-  if(discard.length===0){
-    discardTopEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#777;font-weight:700;background:linear-gradient(#fff,#f6f6f6);border-radius:inherit;">(vacío)</div>`;
-    return;
-  }
-  const top = discard[discard.length-1];
-  const img = document.createElement('img');
-  img.src = cardFaceSVG(top);
-  img.alt = `${top.label} de ${top.suitMeta.label}`;
-  discardTopEl.appendChild(img);
-}
-
-// render mano (cartas del jugador)
-function renderHand(){
-  handAreaEl.innerHTML = '';
-  if(hand.length===0){
-    handAreaEl.innerHTML = `<div style="width:100%; color:#f5f5f5; opacity:0.9">Mano vacía — toma cartas desde el mazo.</div>`;
-    return;
-  }
-  for(let i=0;i<hand.length;i++){
-    const c = hand[i];
-    const container = document.createElement('div');
-    container.className='card';
-    container.style.cursor='default';
-    container.innerHTML = `<img src="${cardFaceSVG(c)}" alt="${c.label} de ${c.suitMeta.label}" title="${c.label} de ${c.suitMeta.label}">`;
-    handAreaEl.appendChild(container);
-  }
-}
-
-// acciones
-function drawFromDeck(){
-  if(deck.length===0) return;
-  const card = deck.pop();
-  discard.push(card);
-  hand.push(card);
-  updateAll();
-}
-
-function updateAll(){
-  renderDeckStack();
-  renderDiscardTop();
-  renderHand();
-  // update aria-pressed on deck (if empty disable)
-  const btn = deckStackEl;
-  if(deck.length===0){
-    btn.setAttribute('aria-pressed','true');
-    btn.style.opacity = '0.8';
-    btn.style.pointerEvents = 'none';
-  } else {
-    btn.setAttribute('aria-pressed','false');
-    btn.style.opacity = '';
-    btn.style.pointerEvents = '';
-  }
-}
-
-// reset / start
-function initNewGame(){
-  deck = createDeck();
-  // attach suit meta to card objects for convenience
-  deck.forEach(c => c.suitMeta = SUITS.find(s=>s.id===c.suit));
-  shuffle(deck);
-  discard = [];
-  hand = [];
-  // give initial 7 cards to "mano" to simulate starting hand (optional)
-  for(let i=0;i<7 && deck.length>0;i++){
-    const c = deck.pop();
-    c.suitMeta = SUITS.find(s=>s.id===c.suit);
-    hand.push(c);
-  }
-  updateAll();
-}
-
-// event listeners
-deckStackEl.addEventListener('click', () => {
-  drawFromDeck();
-});
-deckStackEl.addEventListener('keydown', (e) => {
-  if(e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    drawFromDeck();
-  }
-});
-resetBtn.addEventListener('click', () => {
-  initNewGame();
-});
-
-// start
-initNewGame();
-
+// ====== INIT ======
+loadSession(); uiSync();
 </script>
 </body>
 </html>
